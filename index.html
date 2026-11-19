@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<title>Optim Bot — анкета кофейни</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;600&family=Onest:wght@400;500;600;700&family=Outfit:wght@800&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* токены из optim-bot-v2/style.css */
+:root{
+  --lime:#D4FF4A; --paper:#F3FFCC; --blush:#E6FF9A; --soft:#E4F0BC;
+  --ink:#0A0A0A; --ink2:#2B2B2B; --muted:#4E5A26; --ok:#2F6B00; --bad:#B0230E;
+  --head:'Unbounded',var(--sans); --pix:'Pixelify Sans','Courier New',monospace; --sans:'Onest',system-ui,sans-serif;
+  --hard:4px 4px 0 #0A0A0A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--paper);-webkit-text-size-adjust:100%}
+body{background:var(--paper);font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;
+  min-height:100dvh;-webkit-tap-highlight-color:transparent}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+
+/* шапка */
+.top{position:sticky;top:0;z-index:5;background:var(--ink);color:var(--lime);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+.top .in{max-width:560px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Outfit',var(--sans);font-weight:800;font-size:19px;letter-spacing:-.02em;line-height:1;color:var(--lime)}
+.logo .cup{width:30px;height:23px;flex:none}
+.logo .wm{display:flex;align-items:baseline;white-space:nowrap}
+.po{display:inline-block;width:.6em;height:.6em;margin:0 .04em 0 .02em}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.stepno{font-family:var(--pix);font-size:17px;font-weight:600;color:var(--lime);white-space:nowrap}
+.stepno span{opacity:.55}
+.bar{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:12px}
+.bar i{height:8px;background:#2E3318}
+.bar i.on{background:var(--lime)}
+.bar i.cur{background:repeating-linear-gradient(90deg,var(--lime) 0 4px,#2E3318 4px 8px)}
+.saved{font-size:12px;color:#B9C98A;margin-top:8px;min-height:15px}
+
+.checker{height:12px;background:conic-gradient(var(--ink) 25%,var(--lime) 0 50%,var(--ink) 0 75%,var(--lime) 0) 0 0/12px 12px}
+
+main{max-width:560px;margin:0 auto;padding:24px 16px calc(120px + env(safe-area-inset-bottom))}
+.kicker{display:inline-block;font-family:var(--head);font-size:11px;font-weight:500;text-transform:lowercase;
+  background:var(--ink);color:var(--lime);padding:4px 9px 5px;margin-bottom:12px}
+h1{font-family:var(--head);font-weight:600;font-size:27px;line-height:1.12;letter-spacing:-.02em;margin-bottom:10px}
+h2{font-family:var(--head);font-weight:600;font-size:24px;line-height:1.15;letter-spacing:-.02em;margin-bottom:8px}
+.lead{font-size:16px;line-height:1.5;color:#1F2410}
+.hint{font-size:14px;line-height:1.45;color:var(--muted)}
+
+/* поля */
+.f{margin-top:22px}
+.f>label,.f>.lbl{display:block;font-weight:700;font-size:15px;margin-bottom:8px;line-height:1.3}
+.f .sub{display:block;font-weight:400;font-size:13px;color:var(--muted);margin-top:2px}
+.inp{width:100%;background:#fff;border:2px solid var(--ink);border-radius:0;padding:12px 12px;font-size:16px;line-height:1.35;outline:none;
+  -webkit-appearance:none;appearance:none}
+.inp:focus{box-shadow:var(--hard)}
+textarea.inp{min-height:110px;resize:vertical}
+.inp::placeholder{color:#8B9466}
+select.inp{background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h12v2H0zM2 2h8v2H2zM4 4h4v2H4z' fill='%230A0A0A'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:34px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--ink);background:#fff;padding:9px 13px;font-size:15px;font-weight:600;line-height:1.2;user-select:none;-webkit-user-select:none}
+.chip.on{background:var(--ink);color:var(--lime)}
+.other{margin-top:8px}
+
+/* повторяющиеся строки */
+.rows{display:grid;gap:12px}
+.rowc{background:#fff;border:2px solid var(--ink);padding:12px 12px 14px;position:relative}
+.rowc .rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.rowc .rh b{font-family:var(--pix);font-size:15px;font-weight:600}
+.rowc .rh .t{font-family:var(--sans);font-weight:700;font-size:15px}
+.rowc .rh .chk{min-height:30px;font-size:14px}
+.rowc .del{border:0;background:none;font-size:13px;color:var(--muted);text-decoration:underline;padding:4px}
+.rowc .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rowc .g .w{grid-column:1/-1}
+.rowc .g label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.rowc .inp{padding:10px;border-width:1.5px}
+.chk{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;min-height:44px;user-select:none}
+.rowc .g>div:has(>.chk){display:flex;align-items:flex-end}
+.rowc label.chk{display:flex;margin:0;font-size:15px;color:var(--ink)}
+.chk input{position:absolute;opacity:0;pointer-events:none}
+.chk i{width:22px;height:22px;border:2px solid var(--ink);background:#fff;flex:none;display:grid;place-items:center}
+.chk input:checked+i{background:var(--ink)}
+.chk input:checked+i::after{content:"";width:10px;height:10px;background:var(--lime)}
+.add{margin-top:10px;width:100%;border:2px dashed var(--ink);background:transparent;padding:12px;font-weight:700;font-size:15px}
+
+/* «скинуть как есть» */
+.drop{margin-top:28px;background:var(--ink);color:#E9EFD6;padding:16px;box-shadow:4px 4px 0 var(--lime),4px 4px 0 2px var(--ink)}
+.drop h3{font-family:var(--head);font-weight:600;font-size:16px;color:var(--lime);margin-bottom:4px}
+.drop p{font-size:14px;line-height:1.45;color:#C9D3AA}
+.drop .btn{margin-top:12px}
+.files{list-style:none;margin-top:10px;display:grid;gap:6px}
+.files li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;background:#1E2110;padding:8px 10px;align-items:center}
+.files li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files li em{font-style:normal;flex:none;font-size:12.5px}
+.files li em.ok{color:var(--lime)} .files li em.err{color:#FF8E7A}
+.files li button{border:0;background:none;color:#B9C98A;font-size:18px;line-height:1;padding:0 2px}
+
+/* кнопки */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid var(--ink);padding:13px 18px;font-weight:700;font-size:16px;line-height:1.1;min-height:50px}
+.btn.pri{background:var(--ink);color:var(--lime)}
+.btn.sec{background:#fff;color:var(--ink)}
+.btn.lime{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+.btn:active{transform:translate(2px,2px)}
+.btn[disabled]{opacity:.5}
+
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--paper);border-top:2px solid var(--ink);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+.nav .btn.pri{box-shadow:none}
+.skip{display:block;text-align:center;margin:18px auto 0;border:0;background:none;color:var(--muted);text-decoration:underline;font-size:14px;padding:6px}
+
+/* интро */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0 6px}
+.facts>div{background:#fff;border:2px solid var(--ink);padding:12px 10px}
+.facts .n{font-family:var(--pix);font-size:28px;font-weight:600;line-height:1}
+.facts span{display:block;font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.3}
+.list{list-style:none;display:grid;gap:9px;margin-top:20px}
+.list li{padding-left:20px;position:relative;font-size:15px;line-height:1.45}
+.list li::before{content:"";position:absolute;left:2px;top:7px;width:8px;height:8px;background:var(--ink)}
+.call{margin-top:26px;background:var(--lime);border:2px solid var(--ink);box-shadow:var(--hard);padding:16px}
+.call h3{font-family:var(--head);font-weight:600;font-size:17px;margin-bottom:4px}
+.err{color:var(--bad);font-size:14px;margin-top:12px;font-weight:600}
+.done{text-align:left;padding-top:10px}
+.done .big{font-family:var(--pix);font-size:64px;font-weight:600;line-height:1;margin-bottom:12px}
+@media (hover:hover){.chip:hover{background:var(--blush)}.chip.on:hover{background:var(--ink2)}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="in">
+    <div class="toprow">
+      <div class="logo" aria-label="Optim Bot">
+        <svg class="cup" viewBox="0 0 22 17" shape-rendering="crispEdges" aria-hidden="true"><path fill="#D4FF4A" d="M5 0h1v1H5zM11 0h1v1h-1zM17 0h1v1h-1zM4 1h1v2H4zM10 1h1v2h-1zM16 1h1v2h-1zM5 3h1v1H5zM11 3h1v1h-1zM17 3h1v1h-1zM6 4h1v1H6zM12 4h1v1h-1zM18 4h1v1h-1zM5 5h1v1H5zM11 5h1v1h-1zM17 5h1v1h-1zM2 7h16v1H2zM1 8h2v1H1zM17 8h2v1h-2zM1 9h1v4H1zM4 9h12v1H4zM18 9h3v1h-3zM7 10h6v1H7zM18 10h1v3h-1zM21 10h1v2h-1zM19 12h2v1h-2zM2 13h1v1H2zM17 13h1v1h-1zM2 14h2v1H2zM16 14h2v1h-2zM3 15h3v1H3zM14 15h3v1h-3zM5 16h10v1H5z"/></svg>
+        <span class="wm"><svg class="po" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#D4FF4A" d="M2 0h3v1H2zM1 1h5v1H1zM0 2h2v3H0zM5 2h2v3H5zM1 5h5v1H1zM2 6h3v1H2z"/></svg>ptim&nbsp;b<svg class="po" viewBox="0 0 7 7" shape-rendering="crispEdges"><path fill="#D4FF4A" d="M2 0h3v1H2zM1 1h5v1H1zM0 2h2v3H0zM5 2h2v3H5zM1 5h5v1H1zM2 6h3v1H2z"/></svg>t</span>
+      </div>
+      <div class="stepno" id="stepno"></div>
+    </div>
+    <div class="bar" id="bar"></div>
+    <div class="saved" id="saved"></div>
+  </div>
+</header>
+<div class="checker"></div>
+
+<main id="main"></main>
+
+<nav class="nav" id="nav"><div class="in">
+  <button class="btn sec" id="back" type="button">Назад</button>
+  <button class="btn pri" id="next" type="button">Дальше</button>
+</div></nav>
+
+<input type="file" id="picker" multiple hidden accept="image/*,.pdf,.xls,.xlsx,.csv,.doc,.docx,.txt,.ods,.odt">
+
+<script>
+/* ===== НАСТРОЙКА: адрес Apps Script веб-приложения (пусто = демо-режим, ничего не отправляется) ===== */
+const ENDPOINT = 'https://script.google.com/macros/s/AKfycbyG4H0a4FzGY_5oVf6yTebjrE87yEropDIy--UPKhu02Wp1KkZRpZsFYB0PecKYtv4B/exec';
+
+const STORE = 'optimbot_anketa_v1';
+const ROLES = ['бариста','управляющий','владелец','другое'];
+
+const STEPS = [
+ {id:'cafe', title:'Кофейня', intro:'Начнём с главного: как вас зовут и где вы работаете.',
+  drop:'Есть визитка, скрин из Яндекс Карт или список адресов — киньте сюда.',
+  fields:[
+   {k:'name', t:'text', l:'Название кофейни', ph:'Например, «Зерно»'},
+   {k:'contact', t:'text', l:'Ваше имя и Telegram', sub:'Чтобы мы знали, кому писать', ph:'Тимур, @timur_coffee'},
+   {k:'points', t:'rep', l:'Точки', sub:'Если точек несколько — добавьте каждую', one:'Точка', add:'+ ещё точка', min:1,
+    cols:[{k:'addr',l:'Адрес',ph:'Чиланзар, 9-й квартал',w:1},{k:'hours',l:'Часы работы',ph:'8:00–23:00',w:1}]},
+ ]},
+ {id:'team', title:'Команда', intro:'Кто работает и кто будет управлять ботом. Telegram-ники нужны, чтобы бот узнал каждого.',
+  drop:'Список сотрудников в Excel, фото листа или скрин из чата смены — подойдёт всё.',
+  fields:[
+   {k:'people', t:'rep', l:'Сотрудники', one:'Сотрудник', add:'+ ещё человек', min:2,
+    cols:[{k:'name',l:'Имя',ph:'Дилноза'},{k:'tg',l:'Telegram',ph:'@dilnoza'},
+          {k:'role',l:'Роль',t:'sel',opts:ROLES},{k:'admin',l:'Админ в боте',t:'check'}]},
+   {k:'note', t:'area', l:'Что-то важное про команду?', sub:'Стажёры, кто работает только в выходные, совмещения', ph:'Жасур — только по выходным', short:true},
+ ]},
+ {id:'shifts', title:'Смены', intro:'Как устроен день: какие смены, кто закрывает точку и когда собирать выходные.',
+  drop:'Скиньте текущий график — фото, Excel или скрин Google Таблицы.',
+  fields:[
+   {k:'types', t:'rep', l:'Типы смен', one:'Смена', add:'+ ещё смена', min:2,
+    cols:[{k:'name',l:'Название',ph:'Утро',w:1},{k:'from',l:'С',ph:'8:00'},{k:'to',l:'До',ph:'16:00'},{k:'people',l:'Сколько человек',ph:'2',w:1,num:1}]},
+   {k:'closer', t:'chips', l:'Кто закрывает точку?', opts:['Бариста вечерней смены','Управляющий','По очереди'], other:1},
+   {k:'dayoff', t:'chips', l:'Когда собирать пожелания по выходным?', sub:'Бот сам напишет команде и соберёт ответы', opts:['Пт–сб на следующую неделю','Раз в месяц','Не собираем, ставим сами'], other:1},
+   {k:'now', t:'chips', l:'Где сейчас ведёте график?', multi:1, opts:['Excel','Google Таблица','На бумаге','В чате Telegram']},
+ ]},
+ {id:'preps', title:'Заготовки', intro:'Сиропы, соусы, тесто, молочка — всё, что готовите заранее. Бот будет напоминать, что сварить и что просрочено.',
+  drop:'Техкарты, таблица заготовок или фото листа на холодильнике — так даже быстрее.',
+  fields:[
+   {k:'list', t:'rep', l:'Заготовки', one:'Заготовка', add:'+ ещё заготовка', min:2,
+    cols:[{k:'name',l:'Название',ph:'Карамельный сироп',w:1},{k:'unit',l:'Единица',t:'sel',opts:['л','кг','шт']},
+          {k:'life',l:'Хранится, дней',ph:'5',num:1},{k:'perday',l:'Уходит в день',ph:'1,5',num:1},{k:'frozen',l:'Морозилка',t:'check'}]},
+ ]},
+ {id:'close', title:'Закрытие', intro:'Что бариста делает в конце дня. Бот превратит это в чек-лист с галочками.',
+  drop:'Есть распечатанный чек-лист закрытия? Сфотографируйте и киньте.',
+  fields:[
+   {k:'list', t:'area', l:'Чек-лист закрытия', sub:'Каждый пункт с новой строки', ph:'Почистить кофемашину\nВынести мусор\nПротереть витрину\nВыключить свет'},
+   {k:'photo', t:'chips', l:'Где нужно фото-подтверждение?', multi:1, opts:['Кофемашина','Витрина','Бар','Холодильники','Зал','Мусор вынесен'], other:1},
+ ]},
+ {id:'cash', title:'Касса', intro:'Как считаете деньги в конце смены.',
+  drop:'Пример отчёта из кассы или ваша таблица сверки — киньте файлом или скрином.',
+  fields:[
+   {k:'pos', t:'chips', l:'Какая кассовая система?', opts:['iiko','Poster','Jowi','Нет системы'], other:1},
+   {k:'check', t:'chips', l:'Как часто сверяете наличные?', opts:['Каждую смену','Раз в день, на закрытии','Раз в неделю','Не сверяем']},
+   {k:'to', t:'text', l:'Кому отправлять итог по кассе?', ph:'Владельцу и управляющему'},
+ ]},
+ {id:'tasks', title:'Задачи и порядок', intro:'Регулярные дела, о которых легко забыть.',
+  drop:'Регламенты, инструкции, стандарты — Word, PDF или фото. Мы перенесём их в бота.',
+  fields:[
+   {k:'deep', t:'chips', l:'Генуборка — как часто?', opts:['Раз в неделю','Раз в 2 недели','Раз в месяц','Не делаем'], other:1},
+   {k:'deepday', t:'text', l:'В какой день и кто делает?', ph:'Понедельник, утренняя смена', short:true},
+   {k:'stock', t:'chips', l:'Передача склада / инвентаризация', opts:['Каждую смену','Раз в неделю','Раз в месяц','Не делаем'], other:1},
+   {k:'other', t:'area', l:'Ещё регулярные задачи', sub:'Каждая с новой строки, можно с днём', ph:'Заказ молока — пн и чт\nПолив цветов — пятница', short:true},
+ ]},
+ {id:'reports', title:'Отчёты', intro:'Бот сам присылает сводки. Отметьте, что нужно, и кому.',
+  drop:'Есть отчёты, которые вы уже делаете руками? Скиньте пример — сделаем так же.',
+  fields:[
+   {k:'list', t:'rep', l:'Какие отчёты нужны', fixed:['Итог смены','Касса за день','Заготовки и списания','Сроки хранения','Итог недели'],
+    cols:[{k:'on',l:'Нужен',t:'check'},{k:'who',l:'Кому',ph:'Владельцу'},{k:'when',l:'Когда',ph:'Каждый вечер'}]},
+ ]},
+ {id:'final', title:'Почти всё', intro:'Остальное уточним голосом — так быстрее, чем писать.',
+  fields:[
+   {k:'when', t:'chips', l:'Когда удобно созвониться на 15 минут?', multi:1, opts:['Утром','Днём','Вечером']},
+   {k:'phone', t:'text', l:'Телефон или Telegram для звонка', ph:'+998 90 123-45-67', short:true},
+   {k:'more', t:'area', l:'Что ещё нам стоит знать?', ph:'Что сейчас больше всего мешает в работе', short:true},
+ ]},
+];
+
+/* ===== состояние и черновик ===== */
+let S = load();
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(STORE)); if(s&&s.id) return s;}catch(e){}
+  return {id:newId(), step:-1, a:{}, files:{}, sent:false};
+}
+function newId(){return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)).toUpperCase()}
+let saveT;
+function save(quiet){
+  try{localStorage.setItem(STORE, JSON.stringify(S));}catch(e){}
+  if(!quiet){clearTimeout(saveT); const el=$('#saved'); el.textContent='Черновик сохранён'; saveT=setTimeout(()=>el.textContent='',1800);}
+}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const A=(st)=>S.a[st]||(S.a[st]={});
+
+/* ===== отрисовка ===== */
+const N = STEPS.length; // 9, последний — «Почти всё»
+function render(){
+  const i=S.step, main=$('#main');
+  // прогресс
+  $('#bar').innerHTML = STEPS.map((_,k)=>`<i class="${k<i||S.sent?'on':k===i?'cur':''}"></i>`).join('');
+  $('#stepno').innerHTML = i>=0 && i<N ? `${i+1}<span>/${N}</span>` : '';
+  $('#nav').style.display = (S.sent||i<0) ? 'none':'';
+  if(S.sent){main.innerHTML=doneHTML(); bindDone(); return}
+  if(i<0){main.innerHTML=introHTML(); $('#start').onclick=()=>go(0); return}
+  const st=STEPS[i];
+  main.innerHTML = `<span class="kicker">шаг ${i+1} · ${esc(st.title.toLowerCase())}</span>
+    <h2>${esc(st.title)}</h2><p class="hint">${esc(st.intro)}</p>
+    ${st.fields.map(f=>fieldHTML(st,f)).join('')}
+    ${st.drop?dropHTML(st):''}
+    ${i===N-1?callHTML():''}
+    <div id="err"></div>
+    <button class="skip" id="skip" type="button">${i===N-1?'':'Пропустить этот шаг'}</button>`;
+  if(i===N-1) $('#skip').remove();
+  bind(st);
+  $('#back').textContent = 'Назад';
+  $('#next').textContent = i===N-1 ? 'Отправить анкету' : 'Дальше';
+  $('#next').disabled=false;
+}
+
+function introHTML(){
+  const started = Object.keys(S.a).length>0;
+  return `<span class="kicker">анкета перед запуском</span>
+  <h1>Расскажите про свою кофейню</h1>
+  <p class="lead">По этим ответам мы сами настроим Optim Bot: перенесём график, заготовки, чек-листы и регламенты. Вам останется только пользоваться.</p>
+  <div class="facts">
+    <div><div class="n">~10</div><span>минут на всё</span></div>
+    <div><div class="n">9</div><span>коротких шагов</span></div>
+    <div><div class="n">0</div><span>обязательных вопросов</span></div>
+  </div>
+  <ul class="list">
+    <li>Любой вопрос можно пропустить — уточним на созвоне.</li>
+    <li>Списки не обязательно печатать: в каждом шаге есть кнопка <b>«Скинуть как есть»</b> для фото, Excel или PDF.</li>
+    <li>Ответы сохраняются в телефоне. Закрыли — вернётесь туда же.</li>
+  </ul>
+  <button class="btn pri" id="start" type="button" style="width:100%;margin-top:26px">${started?'Продолжить с шага '+(Math.max(S.step,0)+1):'Начать'}</button>`;
+}
+function callHTML(){
+  return `<div class="call"><h3>Созвонимся на 15 минут</h3>
+  <p class="hint" style="color:#1F2410">Уточним остальное и покажем, как всё будет выглядеть у вас. После этого запустим бота.</p></div>`;
+}
+function doneHTML(){
+  return `<div class="done"><div class="big">✓</div><span class="kicker">анкета отправлена</span>
+  <h1>Спасибо! Всё получили</h1>
+  <p class="lead">Изучим ответы и напишем в Telegram, чтобы созвониться на 15 минут и уточнить остальное.</p>
+  <ul class="list"><li>Вспомнили что-то ещё — можно открыть анкету, поправить и отправить снова.</li></ul>
+  <button class="btn sec" id="edit" type="button" style="width:100%;margin-top:24px">Поправить ответы</button></div>`;
+}
+function bindDone(){ $('#edit').onclick=()=>{S.sent=false; S.step=0; save(1); render(); scrollTo(0,0)} }
+
+function fieldHTML(st,f){
+  const v=A(st.id)[f.k];
+  const head=`<${f.t==='chips'||f.t==='rep'?'div class="lbl"':'label for="'+st.id+'_'+f.k+'"'}>${esc(f.l)}${f.sub?`<span class="sub">${esc(f.sub)}</span>`:''}</${f.t==='chips'||f.t==='rep'?'div':'label'}>`;
+  if(f.t==='text') return `<div class="f">${head}<input class="inp" id="${st.id}_${f.k}" data-k="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" autocomplete="off"></div>`;
+  if(f.t==='area') return `<div class="f">${head}<textarea class="inp" id="${st.id}_${f.k}" data-k="${f.k}" placeholder="${esc(f.ph||'')}" ${f.short?'style="min-height:84px"':''}>${esc(v)}</textarea></div>`;
+  if(f.t==='chips'){
+    const sel=Array.isArray(v?.sel)?v.sel:[];
+    return `<div class="f">${head}<div class="chips" data-chips="${f.k}" data-multi="${f.multi?1:0}">
+      ${f.opts.concat(f.other?['Другое']:[]).map(o=>`<button type="button" class="chip${sel.includes(o)?' on':''}" data-o="${esc(o)}" aria-pressed="${sel.includes(o)}">${esc(o)}</button>`).join('')}
+      </div>${f.other?`<input class="inp other" data-other="${f.k}" placeholder="Своё" value="${esc(v?.other)}" ${sel.includes('Другое')?'':'hidden'}>`:''}</div>`;
+  }
+  if(f.t==='rep'){
+    let rows=Array.isArray(v)?v:[];
+    if(f.fixed){ rows=f.fixed.map((t,k)=>Object.assign({title:t},rows[k]||{})); A(st.id)[f.k]=rows; }
+    else while(rows.length<(f.min||1)) rows.push({});
+    A(st.id)[f.k]=rows;
+    return `<div class="f">${head}<div class="rows" data-rep="${f.k}">${rows.map((r,ri)=>rowHTML(f,r,ri)).join('')}</div>
+      ${f.fixed?'':`<button type="button" class="add" data-add="${f.k}">${esc(f.add)}</button>`}</div>`;
+  }
+  return '';
+}
+function rowHTML(f,r,ri){
+  const title = f.fixed ? `<span class="t">${esc(r.title)}</span>` : `<b>${esc(f.one)} ${ri+1}</b>`;
+  const chkHTML=(c)=>`<label class="chk"><input type="checkbox" data-c="${c.k}" ${r[c.k]?'checked':''}><i></i>${esc(c.l)}</label>`;
+  const del = f.fixed ? f.cols.filter(c=>c.t==='check').map(chkHTML).join('') : `<button type="button" class="del" data-del="${ri}">убрать</button>`;
+  const cells = f.cols.map(c=>{
+    const v=r[c.k];
+    if(c.t==='check') return f.fixed ? '' : `<div>${chkHTML(c)}</div>`;
+    if(c.t==='sel') return `<div><label>${esc(c.l)}</label><select class="inp" data-c="${c.k}"><option value="">—</option>${c.opts.map(o=>`<option${v===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+    return `<div class="${c.w?'w':''}"><label>${esc(c.l)}</label><input class="inp" data-c="${c.k}" value="${esc(v)}" placeholder="${esc(c.ph||'')}" ${c.num?'inputmode="decimal"':''} autocomplete="off"></div>`;
+  }).join('');
+  return `<div class="rowc" data-ri="${ri}"><div class="rh">${title}${del}</div><div class="g">${cells}</div></div>`;
+}
+function dropHTML(st){
+  const fl=S.files[st.id]||[];
+  return `<div class="drop"><h3>Скинуть как есть</h3><p>${esc(st.drop)} Заполнять поля выше тогда не нужно.</p>
+    <ul class="files" id="files">${fl.map((x,k)=>fileLi(x,k)).join('')}</ul>
+    <button type="button" class="btn lime" id="pick" style="width:100%">📎 Прикрепить фото или файл</button></div>`;
+}
+function fileLi(x,k){
+  const s = x.st==='ok'?'<em class="ok">✓ загружен</em>' : x.st==='err'?'<em class="err">не ушёл</em>' : x.st==='demo'?'<em class="ok">✓</em>' : '<em>загружаю…</em>';
+  return `<li><span>${esc(x.name)}</span>${s}<button type="button" data-rmf="${k}" aria-label="Убрать">×</button></li>`;
+}
+
+/* ===== события ===== */
+function bind(st){
+  const a=A(st.id), main=$('#main');
+  main.oninput = e=>{
+    const t=e.target;
+    if(t.dataset.k!==undefined){a[t.dataset.k]=t.value; save(); return}
+    if(t.dataset.other){(a[t.dataset.other] ||= {sel:[]}).other=t.value; save(); return}
+    if(t.dataset.c){ const rep=t.closest('[data-rep]').dataset.rep, ri=+t.closest('[data-ri]').dataset.ri;
+      a[rep][ri][t.dataset.c] = t.type==='checkbox'?t.checked:t.value; save(); }
+  };
+  main.onchange = main.oninput;
+  main.onclick = e=>{
+    const chip=e.target.closest('.chip');
+    if(chip){
+      const box=chip.parentElement, k=box.dataset.chips, multi=box.dataset.multi==='1', o=chip.dataset.o;
+      const v=(a[k] ||= {sel:[]}); v.sel ||= [];
+      if(multi) v.sel = v.sel.includes(o)? v.sel.filter(x=>x!==o) : v.sel.concat(o);
+      else v.sel = v.sel.includes(o)? [] : [o];
+      box.querySelectorAll('.chip').forEach(c=>{const on=v.sel.includes(c.dataset.o); c.classList.toggle('on',on); c.setAttribute('aria-pressed',on)});
+      const oth=main.querySelector(`[data-other="${k}"]`); if(oth){oth.hidden=!v.sel.includes('Другое'); if(!oth.hidden&&o==='Другое')oth.focus()}
+      save(); return;
+    }
+    const add=e.target.closest('[data-add]');
+    if(add){const k=add.dataset.add, f=st.fields.find(x=>x.k===k); a[k].push({}); save();
+      const box=main.querySelector(`[data-rep="${k}"]`); box.insertAdjacentHTML('beforeend',rowHTML(f,{},a[k].length-1));
+      box.lastElementChild.querySelector('input,select')?.focus(); return}
+    const del=e.target.closest('[data-del]');
+    if(del){const k=del.closest('[data-rep]').dataset.rep; a[k].splice(+del.dataset.del,1); save(); render(); return}
+    if(e.target.closest('#pick')){$('#picker').dataset.st=st.id; $('#picker').click(); return}
+    const rm=e.target.closest('[data-rmf]');
+    if(rm){S.files[st.id].splice(+rm.dataset.rmf,1); save(); refreshFiles(st.id); return}
+    if(e.target.closest('#skip')) go(S.step+1);
+  };
+}
+$('#back').onclick=()=>go(S.step-1);
+$('#next').onclick=()=>{ if(S.step===N-1) submit(); else go(S.step+1) };
+function go(i){S.step=Math.max(-1,Math.min(N-1,i)); save(1); render(); scrollTo(0,0)}
+
+/* ===== файлы ===== */
+const MAXF = 20*1024*1024;
+$('#picker').onchange = async e=>{
+  const stId=e.target.dataset.st, list=[...e.target.files]; e.target.value='';
+  for(const file of list){
+    const arr=(S.files[stId] ||= []);
+    if(file.size>MAXF*1.5 && !file.type.startsWith('image/')){alert(`«${file.name}» больше 20 МБ — пришлите его в Telegram, пожалуйста.`); continue}
+    const rec={name:file.name, st:'up'}; arr.push(rec); refreshFiles(stId);
+    try{
+      const blob = file.type.startsWith('image/') && file.size>1.2e6 ? await shrink(file) : file;
+      if(blob.size>MAXF) throw new Error('big');
+      if(!ENDPOINT){rec.st='demo'; save(); refreshFiles(stId); continue}
+      const data=await b64(blob);
+      const r=await post({action:'file', id:S.id, block:stId, cafe:A('cafe').name||'', name:file.name, mime:blob.type||file.type||'application/octet-stream', data});
+      rec.st='ok'; rec.url=r.url;
+    }catch(err){rec.st='err'}
+    save(); refreshFiles(stId);
+  }
+};
+function refreshFiles(stId){const ul=$('#files'); if(ul && STEPS[S.step]?.id===stId) ul.innerHTML=(S.files[stId]||[]).map((x,k)=>fileLi(x,k)).join('')}
+function b64(blob){return new Promise((ok,no)=>{const r=new FileReader(); r.onload=()=>ok(String(r.result).split(',')[1]); r.onerror=no; r.readAsDataURL(blob)})}
+function shrink(file){ // фото с телефона: до 2000px, JPEG
+  return new Promise(ok=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{const m=2000, k=Math.min(1,m/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+      c.toBlob(b=>ok(b&&b.size<file.size?b:file),'image/jpeg',.85)};
+    img.onerror=()=>{URL.revokeObjectURL(url); ok(file)};
+    img.src=url;
+  });
+}
+async function post(body){
+  const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  const j=await r.json(); if(!j.ok) throw new Error(j.error||'fail'); return j;
+}
+
+/* ===== отправка: человекочитаемые сводки по блокам ===== */
+function chipText(v){if(!v||!v.sel||!v.sel.length) return ''; return v.sel.map(x=>x==='Другое'&&v.other?v.other:x).join(', ')}
+function summary(st){
+  const a=A(st.id), out=[];
+  for(const f of st.fields){
+    const v=a[f.k]; let s='';
+    if(f.t==='chips') s=chipText(v);
+    else if(f.t==='rep'){
+      const rows=(v||[]).filter(r=>f.fixed? r.on||r.who||r.when : f.cols.some(c=>c.t!=='check'&&String(r[c.k]||'').trim()));
+      s=rows.map((r,i)=>{
+        if(f.fixed){const d=[r.who,r.when].filter(Boolean).join(', '); return `• ${r.title}${r.on?'':' (не отмечен)'}${d?': '+d:''}`}
+        return '• '+f.cols.map(c=>c.t==='check'?(r[c.k]?c.l.toLowerCase():''):(r[c.k]?`${c.l==='Название'||c.l==='Имя'||c.l==='Адрес'?'':c.l+': '}${r[c.k]}`:'')).filter(Boolean).join(' · ');
+      }).join('\n');
+    } else s=String(v||'').trim();
+    if(s) out.push(`${f.l}:\n${s}`);
+  }
+  const fl=(S.files[st.id]||[]).filter(x=>x.st==='ok');
+  if(fl.length) out.push('Файлы: '+fl.map(x=>x.name).join(', '));
+  return out.join('\n\n');
+}
+async function submit(){
+  const btn=$('#next'), err=$('#err');
+  err.innerHTML='';
+  const pending=Object.values(S.files).flat().some(x=>x.st==='up');
+  if(pending){err.innerHTML='<p class="err">Подождите, ещё загружаются файлы…</p>'; return}
+  const payload={action:'submit', id:S.id, sum:{}, raw:S.a, ua:navigator.userAgent.slice(0,120)};
+  STEPS.forEach(st=>payload.sum[st.id]=summary(st));
+  if(!ENDPOINT){ // демо-режим
+    console.log('DEMO submit', payload); S.sent=true; save(1); render(); scrollTo(0,0); return;
+  }
+  btn.disabled=true; btn.textContent='Отправляю…';
+  try{await post(payload); S.sent=true; save(1); render(); scrollTo(0,0);}
+  catch(e){btn.disabled=false; btn.textContent='Отправить анкету';
+    err.innerHTML='<p class="err">Не получилось отправить. Проверьте интернет и нажмите ещё раз — ответы сохранены.</p>'}
+}
+
+render();
+</script>
+</body>
+</html>
