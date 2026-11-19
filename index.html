@@ -232,7 +232,9 @@ const STEPS = [
 /* ===== состояние и черновик ===== */
 let S = load();
 function load(){
-  try{const s=JSON.parse(localStorage.getItem(STORE)); if(s&&s.id) return s;}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(STORE));
+    if(s&&s.sent&&s.sentAt&&Date.now()-s.sentAt>2*864e5){localStorage.removeItem(STORE)} // черновик живёт 2 дня после отправки
+    else if(s&&s.id) return s;}catch(e){}
   return {id:newId(), step:-1, a:{}, files:{}, sent:false};
 }
 function newId(){return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)).toUpperCase()}
@@ -340,7 +342,7 @@ function dropHTML(st){
     <button type="button" class="btn lime" id="pick" style="width:100%">📎 Прикрепить фото или файл</button></div>`;
 }
 function fileLi(x,k){
-  const s = x.st==='ok'?'<em class="ok">✓ загружен</em>' : x.st==='err'?'<em class="err">не ушёл</em>' : x.st==='demo'?'<em class="ok">✓</em>' : '<em>загружаю…</em>';
+  const s = x.st==='ok'?'<em class="ok">✓ загружен</em>' : x.st==='err'?'<em class="err">не ушёл</em>' : x.st==='limit'?'<em class="err">лимит, позже</em>' : x.st==='demo'?'<em class="ok">✓</em>' : '<em>загружаю…</em>';
   return `<li><span>${esc(x.name)}</span>${s}<button type="button" data-rmf="${k}" aria-label="Убрать">×</button></li>`;
 }
 
@@ -397,7 +399,7 @@ $('#picker').onchange = async e=>{
       const data=await b64(blob);
       const r=await post({action:'file', id:S.id, block:stId, cafe:A('cafe').name||'', name:file.name, mime:blob.type||file.type||'application/octet-stream', data});
       rec.st='ok'; rec.url=r.url;
-    }catch(err){rec.st='err'}
+    }catch(err){rec.st=err.message==='limit'?'limit':'err'}
     save(); refreshFiles(stId);
   }
 };
@@ -450,9 +452,9 @@ async function submit(){
     console.log('DEMO submit', payload); S.sent=true; save(1); render(); scrollTo(0,0); return;
   }
   btn.disabled=true; btn.textContent='Отправляю…';
-  try{await post(payload); S.sent=true; save(1); render(); scrollTo(0,0);}
+  try{await post(payload); S.sent=true; S.sentAt=Date.now(); save(1); render(); scrollTo(0,0);}
   catch(e){btn.disabled=false; btn.textContent='Отправить анкету';
-    err.innerHTML='<p class="err">Не получилось отправить. Проверьте интернет и нажмите ещё раз — ответы сохранены.</p>'}
+    err.innerHTML= e.message==='limit' ? '<p class="err">Слишком много отправок. Попробуйте через час или напишите нам в Telegram — ответы сохранены.</p>' : '<p class="err">Не получилось отправить. Проверьте интернет и нажмите ещё раз — ответы сохранены.</p>'}
 }
 
 render();
